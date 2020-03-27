@@ -5,10 +5,12 @@ import android.view.View
 import androidx.core.os.bundleOf
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.google.android.gms.ads.formats.UnifiedNativeAd
 import io.nichijou.tujian.R
 import io.nichijou.tujian.base.BaseFragment
 import io.nichijou.tujian.common.entity.Picture
 import io.nichijou.tujian.common.ext.sbl
+import io.nichijou.tujian.ext.addFragmentToActivity
 import io.nichijou.tujian.paging.LoadState
 import io.nichijou.tujian.paging.Status
 import jp.wasabeef.recyclerview.animators.LandingAnimator
@@ -19,7 +21,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class ListFragment : BaseFragment() {
   companion object {
     private const val CATEGORY_ID = "category_id"
-    fun newInstance(cid: String) = ListFragment().apply {
+    fun newInstance(cid: String, nativeAd: UnifiedNativeAd?) = ListFragment().apply {
       arguments = bundleOf(CATEGORY_ID to cid)
     }
   }
@@ -71,7 +73,8 @@ class ListFragment : BaseFragment() {
       val images = a.currentList ?: emptyList<Picture>()
       val list = arrayListOf<Picture>()
       list.addAll(images)
-      PhotoItem.newInstance(list, pos).show(childFragmentManager, "dialog")
+      val photoItem = PhotoItem.newInstance(list, pos)
+      addFragmentToActivity(photoItem)
     }
   }
 

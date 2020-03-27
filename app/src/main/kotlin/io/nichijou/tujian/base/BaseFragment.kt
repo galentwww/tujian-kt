@@ -3,19 +3,14 @@ package io.nichijou.tujian.base
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
-import android.view.KeyEvent
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import androidx.appcompat.widget.Toolbar
-import com.billy.android.swipe.SwipeConsumer
 import io.nichijou.tujian.ext.FragmentBackHandler
-import io.nichijou.tujian.ext.handleBackPress
 import io.nichijou.tujian.ext.target
 import io.nichijou.tujian.isDark
 import io.nichijou.tujian.ui.MainActivity
+import me.yokeyword.fragmentation.SupportActivity
 import me.yokeyword.fragmentation.SupportFragment
-import org.jetbrains.anko.longToast
 import org.jetbrains.anko.support.v4.longToast
 import kotlin.system.exitProcess
 
@@ -25,10 +20,11 @@ abstract class BaseFragment : SupportFragment(), FragmentBackHandler {
   override fun onBackPressed(): Boolean = false
   override fun onBackPressedSupport(): Boolean {
     if (MainActivity.swipeConsumer != null) {
+      MainActivity.swipeConsumer!!.enableHorizontal()
       if (MainActivity.swipeConsumer!!.isOpened) {
         MainActivity.swipeConsumer!!.smoothClose()
       } else if (MainActivity.nowFragment != MainActivity.mFragments[0]) {
-        MainActivity.swipeConsumer!!.smoothLeftOpen()
+        MainActivity.showHideListener(target() as SupportActivity, MainActivity.mFragments[0]!!)
       } else if (!isExit) {// 双击退出
         isExit = true
         longToast("再按一次退出图鉴日图")
@@ -47,11 +43,16 @@ abstract class BaseFragment : SupportFragment(), FragmentBackHandler {
     return view
   }
 
+  override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+    super.onCreateOptionsMenu(menu, inflater)
+    menu.clear()
+  }
+
   protected fun setupDrawerWithToolbar(toolbar: Toolbar) {
     MainActivity.swipeConsumer!!.enableHorizontal()
     target().setSupportActionBar(toolbar)
     toolbar.setNavigationOnClickListener {
-      MainActivity.swipeConsumer!!.open(true, SwipeConsumer.DIRECTION_LEFT)
+      MainActivity.swipeConsumer!!.smoothLeftOpen()
     }
   }
 

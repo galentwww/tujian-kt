@@ -3,8 +3,9 @@
   <string name="app_name_pinyin">tújiàn</string>
   <string name="bing_wallpaper">必应壁纸</string>
   <string name="apply_theme_color">已应用主题色：#%1$s</string>
-  <string name="start_download">开始下载</string>
+  <string name="start_download">开始下载…</string>
   <string name="download">下载</string>
+  <string name="update">更新</string>
   <string name="please_open_download_manager">您需要打开文件下载功能</string>
   <string name="go">前往</string>
   <string name="cacel">取消</string>
@@ -34,6 +35,7 @@
   <string name="screen_saver_interval_desc">屏幕保护下次显示的间隔</string>
   <string name="muzei_settings">Muzei 设置</string>
   <string name="muzei_settings_desc">Muzei 相关设置</string>
+  <string name="update_title">图鉴入土</string>
 
   <string name="today">今日</string>
   <string name="bing">必应</string>
@@ -41,6 +43,8 @@
   <string name="history">历史</string>
   <string name="settings">设置</string>
   <string name="about">关于</string>
+
+  <string name="tag_yy">运营</string>
 
   <string name="enable_switch">壁纸切换</string>
   <string name="enable_switch_desc">是否启用壁纸自动切换</string>
@@ -109,7 +113,7 @@
   <string name="fuck_bool_desc">启用屏保时，小精灵数量不能为0</string>
   <string name="creature_num_format">小精灵数量：%1$d</string>
   <string name="team_info">团队信息</string>
-  <string name="osl">开源代码许可</string>
+  <string name="osl">开放源代码许可</string>
   <string name="post">投稿</string>
   <string name="label_title">标题</string>
   <string name="label_desc">描述</string>
@@ -128,4 +132,6 @@
   <string name="screen_saver">屏保</string>
   <string name="search">搜索</string>
   <string name="fei_hua">根据相关法律法规要求，我们更新完善了\n[《图鉴用户协议》]("https://www.dailypics.cn/doc/1")和\n[《图鉴隐私政策》]("https://www.dailypics.cn/doc/2")\n，在您同意并接受后，将可正常使用图鉴日图为您提供的全部功能。\n\n即使您未同意该隐私条款也可正常浏览图鉴日图并下载相关内容，但无法进行投稿，请您悉知。</string>
+
+  <string name="loading_today">正在加载今日图片…</string>
 </resources>

@@ -10,6 +10,12 @@
   <uses-permission android:name="android.permission.SET_WALLPAPER" />
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
+  <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+  <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+  <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+  <uses-permission
+    android:name="android.permission.READ_LOGS"
+    tools:ignore="ProtectedPermissions" />
 
   <application
     android:name=".App"
@@ -36,6 +42,7 @@
     <provider
       android:name="io.nichijou.tujian.provider.TujianDocumentsProvider"
       android:authorities="${documentsProviderAuthority}"
+      android:enabled="true"
       android:exported="true"
       android:grantUriPermissions="true"
       android:permission="android.permission.MANAGE_DOCUMENTS">
@@ -43,6 +50,9 @@
         <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
       </intent-filter>
     </provider>
+    <meta-data
+      android:name="com.google.android.gms.ads.APPLICATION_ID"
+      android:value="@string/gua_ner_ga_ozhi" />
   </application>
 
 </manifest>

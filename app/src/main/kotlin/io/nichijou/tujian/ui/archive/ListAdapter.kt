@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import androidx.paging.PagedListAdapter
 import androidx.palette.graphics.Palette
 import androidx.recyclerview.widget.RecyclerView
+import com.bm.library.PhotoView
 import com.bumptech.glide.Glide
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
@@ -26,7 +27,7 @@ import java.util.*
 
 class ListAdapter(
   private val draweeClicked: (
-    view: View,
+    view: PhotoView,
     adapter: PagedListAdapter<Picture, ViewHolder>,
     pos: Int
   ) -> Unit
@@ -34,15 +35,16 @@ class ListAdapter(
 
   private val cacheColors = WeakHashMap<String, List<Palette.Swatch>>()
 
-  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_picture, parent, false))
+  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
+    ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_picture, parent, false))
 
   override fun onBindViewHolder(holder: ViewHolder, position: Int) {
     val picture = getItem(position)
-    val colors = cacheColors[getNewUrl(picture)]
+    val colors = cacheColors[getNewUrl(picture, 360)]
     if (colors.isNullOrEmpty()) {
       holder.itemView.colors?.makeGone()
       if (colors == null) {
-        getNewUrl(picture)?.getPaletteSwatches { s, c ->
+        getNewUrl(picture, 360)?.getPaletteSwatches { s, c ->
           bindColors(holder, c)
           cacheColors[s] = c
         }
@@ -51,7 +53,7 @@ class ListAdapter(
       bindColors(holder, colors)
     }
     holder.itemView.list_item_thumbnail.setOnClickListener {
-      draweeClicked.invoke(it, this, position)
+      draweeClicked.invoke(it.list_item_thumbnail, this, position)
     }
     holder.bind(picture, position)
   }
@@ -70,7 +72,7 @@ class ListAdapter(
       if (picture == null) return
       itemView.title.text = picture.title
       itemView.date.text = picture.date
-      val newUrl = getNewUrl(picture) + "!w360"
+      val newUrl = getNewUrl(picture, 360)
       if (position == 0) {
         itemView.list_item_thumbnail.ratio = 1.0F
       } else {
@@ -83,6 +85,8 @@ class ListAdapter(
 }
 
 // tujian v2 API
-fun getNewUrl(picture: Picture?): String? {
-  return if (picture?.nativePath == picture?.local) picture?.local else C.API_SS + picture?.nativePath
+fun getNewUrl(picture: Picture?, level: Int = 0): String? {
+  // 360 480 720 1080
+  val levelText = if (level != 0) "!w$level" else ""
+  return if (picture?.nativePath == picture?.local) picture?.local else C.API_SS + picture?.nativePath + levelText
 }

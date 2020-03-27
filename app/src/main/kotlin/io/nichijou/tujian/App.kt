@@ -5,7 +5,9 @@ import android.app.Application
 import android.content.ComponentCallbacks2
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Environment
+import android.util.Log
 import com.bumptech.glide.Glide
 import com.bumptech.glide.GlideBuilder
 import com.bumptech.glide.Registry
@@ -26,9 +28,13 @@ import com.facebook.imagepipeline.core.ImagePipelineConfig
 import com.facebook.imagepipeline.decoder.ProgressiveJpegConfig
 import com.facebook.imagepipeline.image.ImmutableQualityInfo
 import com.facebook.imagepipeline.image.QualityInfo
-import io.nichijou.tujian.common.fresco.OkHttpNetworkFetcher
+import io.nichijou.oops.Oops
+import io.nichijou.tujian.common.commonModule
+import io.nichijou.tujian.common.shortcuts.ShortcutsController
 import me.jessyan.progressmanager.ProgressManager
 import okhttp3.OkHttpClient
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
 import java.io.File
 import java.io.InputStream
 
@@ -41,6 +47,21 @@ class App : Application() {
     Kotpref.init(applicationContext)
     glideOkHttpClient = ProgressManager.getInstance().with(OkHttpClient.Builder())
       .build()
+    startKoin {
+      if (BuildConfig.DEBUG) {
+        printLogger()
+      }
+      androidContext(applicationContext)
+      modules(normalModule, commonModule)
+    }
+    initFresco()
+    Oops.init(this)
+    try {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1)
+        ShortcutsController.updateShortcuts(applicationContext)
+    } catch (e: java.lang.Exception) {
+      Log.e("no shortcut", e.message ?: "")
+    }
   }
 
   override fun onLowMemory() {
@@ -57,7 +78,7 @@ class App : Application() {
 
   companion object {
     var context: Context? = null
-    fun initFresco(okHttpClient: OkHttpClient) {
+    fun initFresco() {
       val memoryRegistry = NoOpMemoryTrimmableRegistry.getInstance()
       memoryRegistry.registerMemoryTrimmable {
         val suggestedTrimRatio = it.suggestedTrimRatio

@@ -1,5 +1,6 @@
 package io.nichijou.tujian.ui
 
+import android.content.Context
 import android.graphics.Color
 import android.graphics.Point
 import android.os.Bundle
@@ -7,6 +8,7 @@ import android.os.CountDownTimer
 import android.view.MotionEvent
 import android.widget.FrameLayout
 import androidx.annotation.ColorInt
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -45,6 +47,7 @@ import org.koin.android.ext.android.inject
 
 
 class MainActivity : SupportActivity(), CoroutineScope by MainScope() {
+  private var firstTime = true
   override fun onCreate(savedInstanceState: Bundle?) {
     Oops.attach(this)
     super.onCreate(savedInstanceState)
@@ -66,16 +69,6 @@ class MainActivity : SupportActivity(), CoroutineScope by MainScope() {
     Oops.bulk {
       statusBarColor = 0
       navBarColor = 0
-    }
-    if (Settings.enableFaceDetection) {
-      askForPermissions(
-        Permission.READ_EXTERNAL_STORAGE,
-        Permission.WRITE_EXTERNAL_STORAGE,
-        Permission.CAMERA) {}
-    } else {
-      askForPermissions(
-        Permission.READ_EXTERNAL_STORAGE,
-        Permission.WRITE_EXTERNAL_STORAGE) {}
     }
     bindLifecycle()
     if (!Settings.feiHua) {
@@ -101,7 +94,8 @@ class MainActivity : SupportActivity(), CoroutineScope by MainScope() {
     swipeConsumer = SmartSwipe.wrap(this).addConsumer(SlidingConsumer())
       .setHorizontalDrawerView(slide).setScrimColor(Color.parseColor("#9A000000"))// 侧滑
     swipeConsumer!!.edgeSize = dip(20)
-    translucentStatusBar(true)// 状态栏沉浸
+//    translucentStatusBar(true)// 状态栏沉浸
+//    setLightStatusBarCompat(isDark())
     if (findFragment(TodayFragment::class.java) == null) {
       mFragments = arrayOf(TodayFragment.newInstance(),
         ArchiveFragment.newInstance(), UploadFragment.newInstance(),
@@ -115,21 +109,37 @@ class MainActivity : SupportActivity(), CoroutineScope by MainScope() {
       mFragments[3] = findFragment(SettingsFragment::class.java)
       mFragments[4] = findFragment(AboutFragment::class.java)
     }
-    fun showHideListener(fragment: SupportFragment) {
-      showHideFragment(fragment, nowFragment)
-      nowFragment = fragment
-      swipeConsumer!!.smoothClose()
-    }
-    slide_today.setOnClickListener { showHideListener(mFragments[0]!!) }
-    slide_save.setOnClickListener { showHideListener(mFragments[1]!!) }
-    slide_upload.setOnClickListener { showHideListener(mFragments[2]!!) }
-    slide_settings.setOnClickListener { showHideListener(mFragments[3]!!) }
-    slide_info.setOnClickListener { showHideListener(mFragments[4]!!) }
+    slide_today.setOnClickListener { showHideListener(this, mFragments[0]!!) }
+    slide_save.setOnClickListener { showHideListener(this, mFragments[1]!!) }
+    slide_upload.setOnClickListener { showHideListener(this, mFragments[2]!!) }
+    slide_settings.setOnClickListener { showHideListener(this, mFragments[3]!!) }
+    slide_info.setOnClickListener { showHideListener(this, mFragments[4]!!) }
     //boo fragment
     if (savedInstanceState == null && !enableFuckBoo) {
       val newFragment = BooFragment.newInstance(Oops.immed().isDark, isIntro = true, enableFace = enableFaceDetection, enableFuckBoo = enableFuckBoo)
       newFragment.setOnExitedListener { resetScreenSaverTimer() }
       addFragmentToActivity(newFragment, tag = getString(R.string.boo_tag))
+    }
+  }
+
+  override fun onWindowFocusChanged(hasFocus: Boolean) {
+    super.onWindowFocusChanged(hasFocus)
+    try {
+      if (hasFocus && firstTime) {
+        if (Settings.enableFaceDetection) {
+          askForPermissions(
+            Permission.READ_EXTERNAL_STORAGE,
+            Permission.WRITE_EXTERNAL_STORAGE,
+            Permission.CAMERA) {}
+        } else {
+          askForPermissions(
+            Permission.READ_EXTERNAL_STORAGE,
+            Permission.WRITE_EXTERNAL_STORAGE) {}
+        }
+        firstTime = false
+      }
+    } catch (e: Exception) {
+      e.printStackTrace()
     }
   }
 
@@ -184,7 +194,7 @@ class MainActivity : SupportActivity(), CoroutineScope by MainScope() {
     })
     Settings.asLiveData(Settings::darkModeInt).observe(this, Observer {
       darkMode = it
-      SettingsFragment.switchTheme(this, darkMode)
+      SettingsFragment.switchTheme(darkMode)
     })
     applyOopsThemeStore {
       mediateLiveDataNonNull(
@@ -241,25 +251,6 @@ class MainActivity : SupportActivity(), CoroutineScope by MainScope() {
     } ?: startScreenSaverTimer()
   }
 
-//  private var isExit = false
-//  override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-//    if (keyCode == KeyEvent.KEYCODE_BACK || swipeConsumer != null) {
-//      if (swipeConsumer!!.isOpened) {
-//        swipeConsumer!!.smoothClose()
-//      } else if (nowFragment != mFragments[0]) {
-//        swipeConsumer!!.smoothLeftOpen()
-//      } else if (!isExit) {// 双击退出
-//        isExit = true
-//        longToast("再按一次退出图鉴日图")
-//        Handler().postDelayed({ isExit = false }, 2000)
-//      } else {
-//        finish()
-//        exitProcess(0)
-//      }
-//    }
-//    return false
-//  }
-
   override fun onDestroy() {
     cancel()
     super.onDestroy()
@@ -269,6 +260,12 @@ class MainActivity : SupportActivity(), CoroutineScope by MainScope() {
     var swipeConsumer: DrawerConsumer? = null
     var nowFragment: SupportFragment = TodayFragment.newInstance()
     var mFragments = arrayOfNulls<SupportFragment>(5)
+
+    fun showHideListener(mainActivity: SupportActivity, fragment: SupportFragment) {
+      mainActivity.showHideFragment(fragment, nowFragment)
+      nowFragment = fragment
+      swipeConsumer!!.smoothClose()
+    }
   }
 }
 

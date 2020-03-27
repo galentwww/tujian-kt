@@ -16,11 +16,9 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
 import androidx.palette.graphics.Palette
 import androidx.viewpager2.widget.ViewPager2
-import com.afollestad.materialdialogs.MaterialDialog
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import com.facebook.imagepipeline.request.ImageRequest
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
@@ -31,17 +29,18 @@ import io.nichijou.tujian.base.BaseFragment
 import io.nichijou.tujian.common.entity.Picture
 import io.nichijou.tujian.common.entity.setWallpaper
 import io.nichijou.tujian.common.ext.*
-import io.nichijou.tujian.common.fresco.getPalette
 import io.nichijou.tujian.ext.target
 import io.nichijou.tujian.getThemeColor
 import io.nichijou.tujian.ui.ColorAdapter
 import io.nichijou.tujian.ui.MainViewModel
 import io.nichijou.tujian.ui.archive.getNewUrl
+import io.nichijou.tujian.ui.doPalettes
 import jp.wasabeef.recyclerview.animators.LandingAnimator
 import kotlinx.android.synthetic.main.fragment_today.*
 import org.jetbrains.anko.isSelectable
 import org.jetbrains.anko.support.v4.toast
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.set
@@ -55,29 +54,18 @@ class TodayFragment : BaseFragment() {
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
     initView()
-    getAppVersionCode(requireContext())
     initViewModel()
+  }
+
+  override fun onHiddenChanged(hidden: Boolean) {
+    super.onHiddenChanged(hidden)
+    if (!hidden && fab != null) {
+      fab.requestLayout()
+    }
   }
 
   private fun initViewModel() {
     viewModel.getToday().observe(viewLifecycleOwner, Observer(::bind2View))
-    viewModel.msg.observe(viewLifecycleOwner, Observer {
-      if (it != "old") toast(it)
-      else MaterialDialog(requireContext()).title(text = "检测更新").icon(R.mipmap.ic_launcher).show {
-        cancelOnTouchOutside(false)
-        cancelable(false)
-        val mdText = "检测到新版本: ${UpdateTujian.name}  \n更新时间: ${UpdateTujian.time}  \n" +
-          "更新内容: ${UpdateTujian.log}  \n\n[跳转下载](${UpdateTujian.url})"
-        message(text = UpdateTujian.name) {
-          val tv = messageTextView
-          tv.isSelectable = false
-          RichText.fromMarkdown(mdText).linkFix { holder ->
-            holder!!.color = getThemeColor()
-            holder.isUnderLine = false
-          }.into(tv)
-        }
-      }
-    })
   }
 
   private var currentPicture: Picture? = null
@@ -108,10 +96,14 @@ class TodayFragment : BaseFragment() {
     currentPicture?.let {
       toolbar.title = it.title
       desc.isSelectable = false
-      RichText.fromMarkdown(it.desc.replace("\n", "  \n")).linkFix { holder ->
-        holder!!.color = getThemeColor()
-        holder.isUnderLine = false
-      }.noImage(true).into(desc)
+      try {
+        RichText.fromMarkdown(it.desc.replace("\n", "  \n")).linkFix { holder ->
+          holder!!.color = getThemeColor()
+          holder.isUnderLine = false
+        }.noImage(true).into(desc)
+      } catch (e: Exception) {
+        e.printStackTrace()
+      }
       val dat = if (it.from == Picture.FROM_BING) it.date else it.date.substring(5)
       val user = " via ${it.user}"
       val result = dat + user
@@ -121,7 +113,7 @@ class TodayFragment : BaseFragment() {
       name_tag.makeVisible()
       if (it.from != Picture.FROM_BING) {
         when (it.user) {
-          "Galentwww", "Chimon89", "Createlite", "Night" -> name_tag.text = "运营"
+          "Galentwww", "Chimon89", "Createlite", "Night" -> name_tag.text = getString(R.string.tag_yy)
           else -> name_tag.makeGone()
         }
       } else {
@@ -131,18 +123,23 @@ class TodayFragment : BaseFragment() {
     }
   }
 
-  private val colorCaches by lazy(LazyThreadSafetyMode.NONE) { hashMapOf<String, Palette>() }
+  private val colorCaches: MutableMap<String, Palette> = mutableMapOf()
 
   private fun palette() {
-    getNewUrl(currentPicture)?.let { url ->
+    getNewUrl(currentPicture, 360)?.let { url ->
       val palette = colorCaches[url]
       if (palette == null) {
-        ImageRequest.fromUri(url)?.getPalette {
-          if (it != null && it.swatches.size > 2) {
-            applyPalette(it)
-            colorCaches[url] = it
+        Glide.with(requireContext()).asBitmap().load(url).into(object : CustomTarget<Bitmap>() {
+          override fun onLoadCleared(placeholder: Drawable?) {}
+          override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+            resource.doPalettes { p ->
+              if (p != null && p.swatches.size > 2) {
+                applyPalette(p)
+                colorCaches[url] = p
+              }
+            }
           }
-        }
+        })
       } else {
         applyPalette(palette)
       }
@@ -233,8 +230,8 @@ class TodayFragment : BaseFragment() {
             target().shareString(currentPicture?.share())
           }
           1 -> {
-            toast("开始保存...")
-            val name = currentPicture?.title + Date()
+            toast(R.string.start_download)
+            val name = currentPicture?.title + currentPicture?.date
             Glide.with(requireContext()).asBitmap().load(getNewUrl(currentPicture)).into(object : CustomTarget<Bitmap>() {
               override fun onLoadCleared(placeholder: Drawable?) {}
               override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
@@ -257,15 +254,5 @@ class TodayFragment : BaseFragment() {
 
   companion object {
     fun newInstance() = TodayFragment()
-  }
-}
-
-class UpdateTujian {
-  companion object {
-    var code: Int = 0
-    var name: String = ""
-    var url: String = ""
-    var log: String = ""
-    var time: String = ""
   }
 }
